@@ -89,7 +89,12 @@ def _apply_patch_naive(diff_text: str) -> bool:
         search_block = []
         replace_block = []
 
-        for h_line in hunk_body.splitlines():
+        hunk_lines = hunk_body.splitlines()
+        # First element is always empty — the \n right after @@ when splitting on @@
+        if hunk_lines and hunk_lines[0] == "":
+            hunk_lines = hunk_lines[1:]
+
+        for h_line in hunk_lines:
             if h_line == "":
                 # blank context line in unified diff
                 search_block.append("")
