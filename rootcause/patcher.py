@@ -90,7 +90,10 @@ def _apply_patch_naive(diff_text: str) -> bool:
         replace_block = []
 
         for h_line in hunk_body.splitlines():
-            if not h_line:
+            if h_line == "":
+                # blank context line in unified diff
+                search_block.append("")
+                replace_block.append("")
                 continue
             if h_line.startswith("-"):
                 search_block.append(h_line[1:])

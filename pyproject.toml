@@ -29,6 +29,10 @@ dev = ["pytest", "ruff", "pytest-mock"]
 [project.scripts]
 rootcause = "rootcause.cli:app"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+collect_ignore = ["tests/fixtures"]
+
 [project.urls]
 Homepage = "https://github.com/UA9-TA/rootcause"
 Repository = "https://github.com/UA9-TA/rootcause"
