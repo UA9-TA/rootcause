@@ -1,0 +1,13 @@
+2024-05-14 10:15:32 ERROR [auth_service] Failed to authenticate user
+Traceback (most recent call last):
+  File "/app/middleware/auth.py", line 45, in authenticate
+    user_id = verify_jwt(token)
+  File "/app/utils/jwt.py", line 22, in verify_jwt
+    payload = jwt.decode(token, secret, algorithms=["HS256"])
+  File "/usr/local/lib/python3.10/site-packages/jwt/api_jwt.py", line 135, in decode
+    self._validate_claims(payload, merged_options, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/jwt/api_jwt.py", line 166, in _validate_claims
+    raise ExpiredSignatureError("Signature has expired")
+jwt.exceptions.ExpiredSignatureError: Signature has expired
+
+2024-05-14 10:15:32 INFO [api_gateway] 401 Unauthorized - POST /api/v1/login - 45ms
