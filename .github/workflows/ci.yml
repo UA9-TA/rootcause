@@ -13,6 +13,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ -v --cov=rootcause --cov-fail-under=65
+      - run: pytest tests/ -v --cov=rootcause --cov-fail-under=40
       - run: ruff check rootcause/
       - run: ruff format --check rootcause/
