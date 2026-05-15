@@ -1,36 +1,34 @@
 import sys
 import threading
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 
 class Tracer:
     """
-    A minimal system tracer to instrument Python execution.
-    For v1 we keep it simple since we mostly rely on pytest's tracebacks,
-    but this provides a framework for execution trace collection.
+    Minimal sys.settrace wrapper that collects call frames from user code.
+    Filters out stdlib and site-packages to keep traces relevant.
     """
+
     def __init__(self):
         self.traces: List[Dict[str, Any]] = []
         self._lock = threading.Lock()
 
     def trace_calls(self, frame, event, arg):
-        if event != 'call':
+        if event != "call":
             return
 
-        co = frame.f_code
-        func_name = co.co_name
-        line_no = frame.f_lineno
-        filename = co.co_filename
-
-        # Filter out standard library paths to reduce noise
+        filename = frame.f_code.co_filename
         if "site-packages" in filename or "/lib/python" in filename:
             return
 
         with self._lock:
-            self.traces.append({
-                "file": filename,
-                "line": line_no,
-                "function": func_name
-            })
+            self.traces.append(
+                {
+                    "file": filename,
+                    "line": frame.f_lineno,
+                    "function": frame.f_code.co_name,
+                }
+            )
 
         return self.trace_calls
 
@@ -40,8 +38,26 @@ class Tracer:
     def stop(self):
         sys.settrace(None)
 
-    def get_traces(self) -> List[Dict[str, Any]]:
-        return self.traces
+    def get_frames(self, max_frames: int = 50) -> List[Dict[str, Any]]:
+        """Return deduplicated frames, capped for token budget."""
+        seen = set()
+        result = []
+        for frame in self.traces:
+            key = (frame["file"], frame["line"], frame["function"])
+            if key not in seen:
+                seen.add(key)
+                result.append(frame)
+        return result[:max_frames]
 
-# Global tracer instance if needed
+    def format_for_context(self) -> str:
+        """Format traces as a readable string for Claude context."""
+        frames = self.get_frames()
+        if not frames:
+            return ""
+        lines = ["## Execution Trace (user code only)"]
+        for f in frames:
+            lines.append(f"  {f['file']}:{f['line']} in {f['function']}()")
+        return "\n".join(lines)
+
+
 global_tracer = Tracer()

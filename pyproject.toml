@@ -9,12 +9,20 @@ description = "AI-powered root cause analysis for failing tests and errors"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-keywords = ["debugging", "testing", "ai", "developer-tools", "cli"]
+authors = [
+    {name = "UA9-TA", email = "vkrmsatsangi@gmail.com"},
+]
+keywords = ["debugging", "testing", "ai", "developer-tools", "cli", "root-cause-analysis"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Topic :: Software Development :: Debuggers",
     "Topic :: Software Development :: Testing",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
     "typer>=0.12",
@@ -24,16 +32,29 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "pytest-mock"]
+dev = ["pytest", "ruff", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
 rootcause = "rootcause.cli:app"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--ignore=tests/fixtures"
 
 [project.urls]
 Homepage = "https://github.com/UA9-TA/rootcause"
 Repository = "https://github.com/UA9-TA/rootcause"
 Issues = "https://github.com/UA9-TA/rootcause/issues"
+Changelog = "https://github.com/UA9-TA/rootcause/blob/main/CHANGELOG.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--ignore=tests/fixtures"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["rootcause"]
+omit = ["rootcause/pytest_plugin.py", "rootcause/run_with_tracer.py"]

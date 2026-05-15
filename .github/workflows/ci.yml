@@ -1,13 +1,18 @@
 name: CI
 on: [push, pull_request]
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ -v
+      - run: pytest tests/ -v --cov=rootcause --cov-fail-under=65
       - run: ruff check rootcause/
+      - run: ruff format --check rootcause/

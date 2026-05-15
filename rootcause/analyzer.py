@@ -2,12 +2,13 @@ import json
 import platform
 import sys
 from dataclasses import dataclass
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 from anthropic import Anthropic
 
-from .runner import FailureReport
 from .config import get_api_key
+from .runner import FailureReport
+
 
 @dataclass
 class Analysis:
@@ -19,6 +20,7 @@ class Analysis:
     confidence: int
     fix_diff: Optional[str] = None
 
+
 def get_env_info() -> str:
     """Gather basic system info for context."""
     return f"""
@@ -26,11 +28,14 @@ def get_env_info() -> str:
     Python Version: {sys.version}
     """
 
+
 def analyze_failure(report: FailureReport, context: Dict[str, str]) -> Analysis:
     """Uses Anthropic API to analyze the failure."""
     api_key = get_api_key()
     if not api_key:
-        raise ValueError("Anthropic API key not found. Please set ANTHROPIC_API_KEY env var or use `rootcause config <key>`")
+        raise ValueError(
+            "Anthropic API key not found. Please set ANTHROPIC_API_KEY env var or use `rootcause config <key>`"
+        )
 
     client = Anthropic(api_key=api_key)
 
@@ -43,10 +48,10 @@ A developer's test is failing. Analyze the failure and identify the EXACT root c
 {report.traceback or report.stdout + report.stderr}
 
 ## Source Code Context
-{context.get('source_context', 'No local source context found.')}
+{context.get("source_context", "No local source context found.")}
 
 ## Recent Git Changes (last 5 commits touching these files)
-{context.get('git_context', 'No recent git changes found.')}
+{context.get("git_context", "No recent git changes found.")}
 
 ## Environment
 {get_env_info()}
@@ -73,9 +78,7 @@ Rules:
         model="claude-sonnet-4-6",
         max_tokens=2048,
         system="You are an expert debugging assistant. Always respond in valid JSON only.",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+        messages=[{"role": "user", "content": prompt}],
     )
 
     response_text = response.content[0].text.strip()
@@ -95,7 +98,7 @@ Rules:
             fix=data.get("fix", "No fix provided."),
             also_found=data.get("also_found", []),
             confidence=data.get("confidence", 0),
-            fix_diff=data.get("fix_diff")
+            fix_diff=data.get("fix_diff"),
         )
     except json.JSONDecodeError:
         raise ValueError(f"Failed to parse AI response as JSON: {response_text}")

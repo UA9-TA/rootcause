@@ -1,14 +1,35 @@
-# RootCause 🔍
+# RootCause
 
-> Point it at any failing test. Get the exact fix.
+<p align="center">
+  <strong>AI-powered root cause analysis for failing tests and runtime errors.</strong><br>
+  Point it at any failure. Get the exact fix.
+</p>
 
-![RootCause](https://img.shields.io/badge/AI-Powered%20Debugging-blue?style=for-the-badge)
+<p align="center">
+  <a href="https://github.com/UA9-TA/rootcause/actions/workflows/ci.yml"><img src="https://github.com/UA9-TA/rootcause/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://pypi.org/project/rootcause/"><img src="https://img.shields.io/pypi/v/rootcause.svg" alt="PyPI"></a>
+  <a href="https://pypi.org/project/rootcause/"><img src="https://img.shields.io/pypi/pyversions/rootcause.svg" alt="Python versions"></a>
+  <a href="https://github.com/UA9-TA/rootcause/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+</p>
 
-RootCause is an open-source CLI tool that performs AI-powered root cause analysis on failing tests and runtime errors. Instead of "asking ChatGPT about your code," RootCause systematically captures the full execution trace, gathers context, and returns the exact root cause + fix in plain English.
+---
 
-<!-- Add demo.gif here -->
+<!-- demo.gif — record with: asciinema rec demo.cast && agg demo.cast demo.gif -->
 
-## Installation
+## What It Does
+
+RootCause runs your failing test, instruments the execution, gathers source code context and recent git changes, then asks Claude to pinpoint the **exact** root cause and write the fix.
+
+This is not "ask ChatGPT about your error." ChatGPT sees what you paste. RootCause sees:
+- The full stack trace with every frame
+- ±30 lines of source around each failure location
+- The last 5 git commits touching those files
+- Your Python version, OS, and package versions
+- Live execution traces via `sys.settrace`
+
+All of that flows into a structured Claude prompt that returns a precise, actionable fix.
+
+## Install
 
 ```bash
 pip install rootcause
@@ -17,64 +38,128 @@ pip install rootcause
 ## Quick Start
 
 ```bash
+# Set your API key once
+rootcause config sk-ant-...
+
 # Analyze a failing pytest test
 rootcause pytest tests/test_auth.py::test_login
 
-# Analyze a failing jest test
-rootcause jest src/__tests__/auth.test.js
-
 # Analyze a raw error log
 rootcause analyze error.log
+
+# Analyze the last error in your terminal
+rootcause last
 ```
 
-## How it Works
+## Example Output
 
 ```
-1. Run Test ──> 2. Capture Trace ──> 3. Gather Context ──> 4. AI Analysis
-(pytest/jest)   (sys.settrace/stderr) (source files + git) (Claude Sonnet)
+╭─ RootCause Analysis ──────────────────────────────────────────────────────╮
+│                                                                            │
+│  Root cause    JWT token comparison fails on non-UTC systems               │
+│  Location      auth/validators.py:147                                      │
+│                                                                            │
+│  Explanation   datetime.now() returns local time but the JWT exp field     │
+│                is UTC. On IST/PST systems this causes all tokens to        │
+│                appear expired immediately. The delta is your UTC offset.   │
+│                                                                            │
+│  Fix           Replace datetime.now() with datetime.utcnow()               │
+│                or timezone-aware: datetime.now(timezone.utc)               │
+│                                                                            │
+│  Also found    Same pattern at session.py:89 — likely the same bug         │
+│                                                                            │
+│  Confidence    94%                                                         │
+│                                                                            │
+╰────────────────────────────────────────────────────────────────────────────╯
+Apply fix automatically? [y/N]
 ```
+
+## How It Works
+
+```
+┌─────────────┐    ┌──────────────────┐    ┌─────────────────────┐    ┌──────────────┐
+│  Run Test   │───▶│  Capture Trace   │───▶│   Gather Context    │───▶│  AI Analysis │
+│             │    │                  │    │                     │    │              │
+│ pytest/jest │    │ sys.settrace     │    │ Source ±30 lines    │    │ Claude       │
+│ mocha/log   │    │ stdout + stderr  │    │ Git diff (5 commits)│    │ Sonnet 4.6   │
+│             │    │ exit code        │    │ Python env info     │    │              │
+└─────────────┘    └──────────────────┘    └─────────────────────┘    └──────────────┘
+```
+
+## Real Example
+
+**The bug:** A JWT auth test passes on UTC servers but fails on IST/PST machines.
+
+```python
+# tests/test_auth.py — this fails on non-UTC systems
+def test_token_expiration():
+    token = create_jwt(expires_in=300)  # 5 minutes
+    assert is_valid(token)              # AssertionError on IST/PST
+```
+
+**Run RootCause:**
+```bash
+rootcause pytest tests/test_auth.py::test_token_expiration
+```
+
+**What it finds:** Points directly to `auth/validators.py:147` where `datetime.now()` is compared against a UTC timestamp. Gives you the one-line fix. Spots the same pattern in `session.py:89` before you even knew it was there.
 
 ## Supported Frameworks
 
-| Framework | Status |
-|-----------|--------|
-| `pytest` | ✅ |
-| `jest` | ✅ |
-| `mocha` | ✅ |
-| `rspec` | 🔜 |
-| `go test` | 🔜 |
+| Framework | Status | Command |
+|-----------|--------|---------|
+| pytest | ✅ Supported | `rootcause pytest tests/test_x.py::test_fn` |
+| jest | ✅ Supported | `rootcause jest src/__tests__/auth.test.js` |
+| mocha | ✅ Supported | `rootcause jest test/auth.spec.js` |
+| error logs | ✅ Supported | `rootcause analyze error.log` |
+| rspec | 🔜 Soon | — |
+| go test | 🔜 Soon | — |
 
 ## Configuration
 
-Set your Anthropic API key to use the tool:
-
 ```bash
+# Option 1: environment variable
 export ANTHROPIC_API_KEY=sk-ant-...
-# OR
+
+# Option 2: save permanently
 rootcause config sk-ant-...
+# Stored in ~/.rootcause/config.toml
 ```
 
-## Why not just ask ChatGPT?
+## Why Not Just Ask ChatGPT?
 
-ChatGPT requires you to manually copy-paste the error log, track down the failing source code, and copy that in too. You might miss important files, or not paste the exact lines that caused the failure.
+| | ChatGPT / manual | RootCause |
+|---|---|---|
+| Context | What you paste | Full execution trace + source + git |
+| Accuracy | Guesses at missing code | Reads the actual files |
+| Speed | 5–10 mins of copy-paste | One command |
+| Related bugs | You have to find them | Scans for related patterns |
+| Fix format | Prose suggestion | Unified diff, apply with one keystroke |
 
-RootCause uses a systematic approach:
-1. Runs the test and collects execution traces.
-2. Extracts exactly the source code involved.
-3. Automatically fetches recent Git changes to give the AI complete context.
-4. Uses an advanced Claude prompt to return structured fixes.
+When you paste an error into ChatGPT, you're hoping you copied the right lines. RootCause knows exactly which lines ran, in what order — because it watched the execution happen.
+
+## Auto-Fix
+
+When RootCause is confident (>80%), it generates a unified diff you can apply instantly:
+
+```bash
+rootcause pytest tests/test_auth.py::test_login --auto-fix
+```
+
+Or interactively — RootCause shows the diff and asks for confirmation before touching any file.
 
 ## Contributing
-
-We welcome contributions! Please see our guidelines for more details. To get started:
 
 ```bash
 git clone https://github.com/UA9-TA/rootcause.git
 cd rootcause
+python -m venv venv && source venv/bin/activate
 pip install -e ".[dev]"
-pytest tests/
+pytest tests/ -v
 ```
+
+PRs welcome. Open an issue first for large changes.
 
 ## License
 
-MIT License
+MIT

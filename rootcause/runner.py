@@ -1,8 +1,9 @@
+import re
 import subprocess
 import time
 from dataclasses import dataclass
-import re
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
 
 @dataclass
 class FailureReport:
@@ -15,44 +16,31 @@ class FailureReport:
     test_name: Optional[str] = None
     error_type: Optional[str] = None
     traceback: Optional[str] = None
-    locations: List[Dict[str, Any]] = None  # List of {'file': str, 'line': int}
+    locations: List[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.locations is None:
             self.locations = []
 
+
 def run_test_command(command_args: List[str]) -> FailureReport:
     """Run a test command, capture its output, and parse the failure."""
     cmd_str = " ".join(command_args)
-    framework = "unknown"
-    if "pytest" in command_args[0]:
-        framework = "pytest"
-    elif "jest" in command_args[0]:
-        framework = "jest"
+    framework = _detect_framework(command_args)
 
     start_time = time.time()
 
-    # Try to inject our tracer for pytest by using it as a plugin
     run_env = None
     if framework == "pytest":
         import os
         import sys
+
         run_env = os.environ.copy()
-        # Prepend our package to PYTHONPATH if needed, and set PYTEST_PLUGINS
         run_env["PYTEST_PLUGINS"] = "rootcause.pytest_plugin"
-        # We also need to use the python executable explicitly to ensure correct env resolution if needed
-        # but let's just use the command_args provided and hope they resolve correctly.
-        # However, to be safe, if the command is just 'pytest', maybe we can use `sys.executable -m pytest`
         if command_args[0] == "pytest":
             command_args = [sys.executable, "-m", "pytest"] + command_args[1:]
 
-    # Run the command
-    result = subprocess.run(
-        command_args,
-        capture_output=True,
-        text=True,
-        env=run_env
-    )
+    result = subprocess.run(command_args, capture_output=True, text=True, env=run_env)
 
     runtime = time.time() - start_time
 
@@ -62,7 +50,7 @@ def run_test_command(command_args: List[str]) -> FailureReport:
         stdout=result.stdout,
         stderr=result.stderr,
         runtime_seconds=runtime,
-        framework=framework
+        framework=framework,
     )
 
     if result.returncode != 0:
@@ -70,67 +58,69 @@ def run_test_command(command_args: List[str]) -> FailureReport:
 
     return report
 
+
+def _detect_framework(command_args: List[str]) -> str:
+    cmd = " ".join(command_args).lower()
+    if "pytest" in cmd:
+        return "pytest"
+    if "jest" in cmd:
+        return "jest"
+    if "mocha" in cmd:
+        return "mocha"
+    return "unknown"
+
+
 def parse_failure(report: FailureReport) -> None:
     """Extract useful information from the failure output."""
     output = report.stdout + "\n" + report.stderr
 
     if report.framework == "pytest":
-        # Basic parsing for pytest
-        # Find test name
         test_name_match = re.search(r"_{3,} (.+?) _{3,}", output)
         if test_name_match:
             report.test_name = test_name_match.group(1)
 
-        # Find error type
         err_type_match = re.search(r"([A-Za-z]+Error):", output)
         if err_type_match:
             report.error_type = err_type_match.group(1)
 
-        # Find locations (file:line) in tracebacks
-        # Look for things like "tests/test_auth.py:12:" or "File ".../file.py", line 12"
         locations = []
-
-        # Pytest style: "tests/test_auth.py:12: AssertionError"
-        for match in re.finditer(r"([a-zA-Z0-9_/\.\-]+):(\d+):", output):
-            locations.append({
-                "file": match.group(1),
-                "line": int(match.group(2))
-            })
-
-        # Standard Python traceback style: "File "/path/to/file.py", line 12"
+        for match in re.finditer(r"([a-zA-Z0-9_/\.\-]+\.py):(\d+):", output):
+            locations.append({"file": match.group(1), "line": int(match.group(2))})
         for match in re.finditer(r'File "([^"]+)", line (\d+)', output):
-            locations.append({
-                "file": match.group(1),
-                "line": int(match.group(2))
-            })
+            locations.append({"file": match.group(1), "line": int(match.group(2))})
 
-        report.locations = locations
-        report.traceback = output # for simplicity, store full output
-
-    elif report.framework == "jest":
-        # Very basic jest parsing
-        # Jest prints files and line numbers often like "at Object.<anonymous> (src/auth.js:14:7)"
-        locations = []
-        for match in re.finditer(r"\(([^:]+):(\d+):(\d+)\)", output):
-            locations.append({
-                "file": match.group(1),
-                "line": int(match.group(2))
-            })
         report.locations = locations
         report.traceback = output
+
+    elif report.framework in ("jest", "mocha"):
+        # Jest and Mocha both print stack frames as: at ... (file.js:line:col)
+        locations = []
+        for match in re.finditer(r"\(([^:)]+\.[jt]sx?):(\d+):\d+\)", output):
+            locations.append({"file": match.group(1), "line": int(match.group(2))})
+
+        # Mocha also prints: at Context.<anonymous> (test/auth.spec.js:14:7)
+        # Jest prints: FAIL src/__tests__/auth.test.js
+        fail_match = re.search(r"(?:FAIL|failing)\s+(\S+\.(?:spec|test)\.[jt]sx?)", output)
+        if fail_match:
+            report.test_name = fail_match.group(1)
+
+        err_match = re.search(r"(Error|AssertionError|TypeError)[::]?\s+(.+)", output)
+        if err_match:
+            report.error_type = err_match.group(1)
+
+        report.locations = locations
+        report.traceback = output
+
     else:
-        # Generic parsing
         locations = []
         for match in re.finditer(r'File "([^"]+)", line (\d+)', output):
-            locations.append({
-                "file": match.group(1),
-                "line": int(match.group(2))
-            })
+            locations.append({"file": match.group(1), "line": int(match.group(2))})
         report.locations = locations
         report.traceback = output
+
 
 def parse_log_file(filepath: str) -> FailureReport:
-    """Parse a raw log file."""
+    """Parse a raw log file or traceback."""
     with open(filepath, "r") as f:
         content = f.read()
 
@@ -140,8 +130,22 @@ def parse_log_file(filepath: str) -> FailureReport:
         stdout=content,
         stderr="",
         runtime_seconds=0.0,
-        framework="log"
+        framework="log",
     )
 
+    parse_failure(report)
+    return report
+
+
+def parse_raw_text(text: str, source: str = "terminal") -> FailureReport:
+    """Parse raw error text (e.g. from shell history)."""
+    report = FailureReport(
+        command=f"last ({source})",
+        exit_code=1,
+        stdout=text,
+        stderr="",
+        runtime_seconds=0.0,
+        framework="log",
+    )
     parse_failure(report)
     return report

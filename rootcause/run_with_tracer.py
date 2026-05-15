@@ -1,5 +1,6 @@
 from rootcause.tracer import global_tracer
 
+
 def main():
     global_tracer.start()
     try:
@@ -9,6 +10,7 @@ def main():
         pass
     finally:
         global_tracer.stop()
+
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,9 @@
-import tempfile
 import os
+import tempfile
 
 from .analyzer import Analysis
 from .display import get_console
+
 
 def apply_fix(analysis: Analysis) -> bool:
     """Attempts to apply the fix automatically using the unified diff."""
@@ -31,6 +32,7 @@ def apply_fix(analysis: Analysis) -> bool:
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+
 
 def _apply_patch_naive(diff_text: str) -> bool:
     """A naive unified diff applier in pure Python."""
@@ -79,7 +81,7 @@ def _apply_patch_naive(diff_text: str) -> bool:
     # We'll group the diff into hunks based on @@ lines
     hunks = diff_text.split("@@")
     if len(hunks) < 3:
-        return False # Invalid format
+        return False  # Invalid format
 
     # Process each hunk
     for i in range(2, len(hunks), 2):
@@ -117,7 +119,9 @@ def _apply_patch_naive(diff_text: str) -> bool:
             # Maybe the newlines are different
             # Try stripping trailing spaces
             search_str_stripped = "\n".join([line_str.rstrip() for line_str in search_block])
-            file_text_stripped = "\n".join([line_str.rstrip() for line_str in file_text.splitlines()])
+            file_text_stripped = "\n".join(
+                [line_str.rstrip() for line_str in file_text.splitlines()]
+            )
             if search_str_stripped in file_text_stripped:
                 # To do this safely, we'd need to reconstruct, but for simplicity we fail here if not exact
                 return False

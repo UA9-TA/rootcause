@@ -1,21 +1,25 @@
 from rich.console import Console
 from rich.panel import Panel
-from rich.theme import Theme
 from rich.syntax import Syntax
+from rich.theme import Theme
 
 # Custom theme for consistent styling
-custom_theme = Theme({
-    "info": "dim cyan",
-    "warning": "yellow",
-    "danger": "bold red",
-    "success": "bold green",
-})
+custom_theme = Theme(
+    {
+        "info": "dim cyan",
+        "warning": "yellow",
+        "danger": "bold red",
+        "success": "bold green",
+    }
+)
 
 console = Console(theme=custom_theme)
+
 
 def get_console() -> Console:
     """Returns the globally configured Rich console."""
     return console
+
 
 def print_header() -> None:
     """Prints the application header."""
@@ -23,14 +27,16 @@ def print_header() -> None:
     console.print(" RootCause Analysis ", style="bold white on blue")
     console.print("──────────────────────────────────────────────────", style="dim")
 
+
 def print_error(message: str) -> None:
     """Prints an error message."""
     console.print(f"[danger]Error:[/danger] {message}")
 
+
 def print_analysis(analysis_data: dict) -> None:
     """Prints the final AI analysis beautifully."""
     # Confidence coloring
-    confidence = analysis_data.get('confidence', 0)
+    confidence = analysis_data.get("confidence", 0)
     if confidence >= 80:
         conf_color = "green"
     elif confidence >= 60:
@@ -69,6 +75,7 @@ def print_analysis(analysis_data: dict) -> None:
 
     console.print(f"✦ [bold]Confidence[/bold]     {conf_text}")
     console.print("──────────────────────────────────────────────────", style="dim")
+
 
 def print_diff(diff_text: str) -> None:
     """Prints a diff nicely."""

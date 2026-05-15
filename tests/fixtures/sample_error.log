@@ -1,13 +1,80 @@
-2024-05-14 10:15:32 ERROR [auth_service] Failed to authenticate user
-Traceback (most recent call last):
-  File "/app/middleware/auth.py", line 45, in authenticate
-    user_id = verify_jwt(token)
-  File "/app/utils/jwt.py", line 22, in verify_jwt
-    payload = jwt.decode(token, secret, algorithms=["HS256"])
-  File "/usr/local/lib/python3.10/site-packages/jwt/api_jwt.py", line 135, in decode
-    self._validate_claims(payload, merged_options, **kwargs)
-  File "/usr/local/lib/python3.10/site-packages/jwt/api_jwt.py", line 166, in _validate_claims
-    raise ExpiredSignatureError("Signature has expired")
-jwt.exceptions.ExpiredSignatureError: Signature has expired
-
-2024-05-14 10:15:32 INFO [api_gateway] 401 Unauthorized - POST /api/v1/login - 45ms
+2026-05-15T08:00:01.123Z [INFO]  api_gateway        Starting request router v2.4.1
+2026-05-15T08:00:01.124Z [INFO]  api_gateway        Listening on :8080
+2026-05-15T08:00:01.201Z [INFO]  auth_service       Auth service v1.9.3 ready
+2026-05-15T08:00:01.312Z [INFO]  db_pool            Connection pool initialized (size=20, host=db-primary.internal)
+2026-05-15T08:00:01.412Z [INFO]  cache_layer        Redis connected at cache.internal:6379
+2026-05-15T08:00:02.001Z [INFO]  api_gateway        Health check passed
+2026-05-15T08:01:14.221Z [INFO]  api_gateway        POST /api/v1/auth/login 200 (req_id=a3f9b1)
+2026-05-15T08:01:14.890Z [INFO]  auth_service       Token issued for user_id=4812 (exp=2026-05-15T09:01:14Z)
+2026-05-15T08:01:17.003Z [INFO]  api_gateway        GET /api/v1/profile 200 (req_id=b9c2d4, user=4812)
+2026-05-15T08:01:19.441Z [INFO]  api_gateway        POST /api/v1/orders 201 (req_id=c1e3f5, user=4812)
+2026-05-15T08:03:22.010Z [INFO]  api_gateway        POST /api/v1/auth/login 200 (req_id=d2f4a6)
+2026-05-15T08:03:22.781Z [INFO]  auth_service       Token issued for user_id=9923 (exp=2026-05-15T09:03:22Z)
+2026-05-15T08:03:25.100Z [INFO]  api_gateway        GET /api/v1/profile 200 (req_id=e3a5b7, user=9923)
+2026-05-15T08:05:01.002Z [INFO]  worker_pool        Batch job started: invoice_generator (job_id=J-881)
+2026-05-15T08:05:01.421Z [INFO]  worker_pool        Processing 247 invoices for billing cycle 2026-05
+2026-05-15T08:05:04.711Z [INFO]  worker_pool        Invoice batch 1/25 complete
+2026-05-15T08:05:08.001Z [INFO]  worker_pool        Invoice batch 2/25 complete
+2026-05-15T08:05:11.330Z [INFO]  worker_pool        Invoice batch 3/25 complete
+2026-05-15T08:05:22.001Z [INFO]  db_pool            Slow query detected: 1.2s (SELECT * FROM orders WHERE user_id=...)
+2026-05-15T08:05:22.003Z [WARN]  db_pool            Query exceeded threshold (threshold=1000ms, actual=1218ms)
+2026-05-15T08:05:22.004Z [INFO]  db_pool            Query completed (rows=847)
+2026-05-15T08:07:44.001Z [INFO]  api_gateway        GET /api/v1/products?category=electronics 200 (req_id=f4b6c8)
+2026-05-15T08:07:44.312Z [INFO]  cache_layer        Cache hit for key=products:electronics (ttl=847s remaining)
+2026-05-15T08:08:11.001Z [INFO]  api_gateway        POST /api/v1/auth/login 200 (req_id=g5c7d9)
+2026-05-15T08:08:11.881Z [INFO]  auth_service       Token issued for user_id=7731 (exp=2026-05-15T09:08:11Z)
+2026-05-15T08:09:14.001Z [INFO]  api_gateway        GET /api/v1/orders 200 (req_id=h6d8e0, user=7731)
+2026-05-15T08:10:00.001Z [INFO]  worker_pool        Invoice batch 12/25 complete
+2026-05-15T08:10:33.001Z [INFO]  api_gateway        PUT /api/v1/profile 200 (req_id=i7e9f1, user=4812)
+2026-05-15T08:11:12.441Z [INFO]  api_gateway        GET /api/v1/dashboard 200 (req_id=j8f0a2, user=9923)
+2026-05-15T08:12:04.001Z [INFO]  cache_layer        Cache miss for key=dashboard:9923 — fetching from DB
+2026-05-15T08:12:04.441Z [INFO]  db_pool            Query completed in 88ms (rows=12)
+2026-05-15T08:12:04.444Z [INFO]  cache_layer        Cache stored key=dashboard:9923 (ttl=300s)
+2026-05-15T08:13:00.001Z [INFO]  api_gateway        POST /api/v1/checkout 200 (req_id=k9a1b3, user=4812)
+2026-05-15T08:13:05.221Z [INFO]  payment_service    Payment intent created (amount=8499, currency=INR, user=4812)
+2026-05-15T08:13:09.001Z [INFO]  payment_service    Payment confirmed (intent_id=pi_3MtwBqLkdIwHu7ix0, user=4812)
+2026-05-15T08:13:09.331Z [INFO]  api_gateway        POST /api/v1/orders 201 (req_id=l0b2c4, user=4812)
+2026-05-15T08:14:01.001Z [INFO]  api_gateway        GET /api/v1/orders/history 200 (req_id=m1c3d5, user=7731)
+2026-05-15T08:15:00.001Z [INFO]  worker_pool        Invoice batch 20/25 complete
+2026-05-15T08:16:22.001Z [INFO]  api_gateway        POST /api/v1/auth/refresh 200 (req_id=n2d4e6, user=4812)
+2026-05-15T08:16:22.441Z [INFO]  auth_service       Refreshing token for user_id=4812
+2026-05-15T08:16:22.442Z [DEBUG] auth_service       Validating existing token (issued=08:01:14Z, now=08:16:22Z IST)
+2026-05-15T08:16:22.443Z [DEBUG] auth_service       Token exp check: exp=1747303274, local_now=1747309582
+2026-05-15T08:16:22.444Z [ERROR] auth_service       Token validation failed: token appears expired
+2026-05-15T08:16:22.445Z [ERROR] auth_service       exp=1747303274 (09:01:14 UTC) < now=1747309582 (local time, IST +5:30)
+2026-05-15T08:16:22.446Z [ERROR] auth_service       Rejecting refresh request for user_id=4812
+2026-05-15T08:16:22.450Z [INFO]  api_gateway        POST /api/v1/auth/refresh 401 (req_id=n2d4e6, user=4812)
+2026-05-15T08:16:23.001Z [WARN]  api_gateway        User 4812 received 401 on token refresh — possible clock skew
+2026-05-15T08:16:24.110Z [INFO]  api_gateway        POST /api/v1/auth/login 200 (req_id=o3e5f7, user=4812)
+2026-05-15T08:16:24.881Z [INFO]  auth_service       Token issued for user_id=4812 (exp=2026-05-15T09:16:24Z)
+2026-05-15T08:17:01.001Z [INFO]  api_gateway        POST /api/v1/auth/refresh 401 (req_id=p4f6a8, user=9923)
+2026-05-15T08:17:01.441Z [ERROR] auth_service       Token validation failed: token appears expired (user=9923)
+2026-05-15T08:17:01.442Z [ERROR] auth_service       exp=1747306402 (09:03:22 UTC) < now=1747309621 (local time, IST +5:30)
+2026-05-15T08:17:02.001Z [INFO]  api_gateway        POST /api/v1/auth/refresh 401 (req_id=q5a7b9, user=7731)
+2026-05-15T08:17:02.441Z [ERROR] auth_service       Token validation failed: token appears expired (user=7731)
+2026-05-15T08:17:02.442Z [ERROR] auth_service       exp=1747309691 (09:08:11 UTC) < now=1747309622 (local time, IST +5:30)
+2026-05-15T08:17:03.001Z [ERROR] api_gateway        3 consecutive auth refresh failures in 1s — possible auth service outage
+2026-05-15T08:17:03.004Z [WARN]  monitoring         Alert: auth.refresh.failure_rate > threshold (3/min, threshold=1/min)
+2026-05-15T08:17:05.001Z [INFO]  worker_pool        Invoice batch 25/25 complete — job J-881 done (247 invoices, 12m4s)
+2026-05-15T08:17:10.001Z [ERROR] api_gateway        Traceback (most recent call last):
+2026-05-15T08:17:10.002Z [ERROR] api_gateway          File "/app/auth/validators.py", line 147, in validate_token
+2026-05-15T08:17:10.003Z [ERROR] api_gateway            if datetime.now().timestamp() > token_payload["exp"]:
+2026-05-15T08:17:10.004Z [ERROR] api_gateway        ValueError: Token comparison using naive local time (IST) vs UTC exp field
+2026-05-15T08:17:10.005Z [ERROR] api_gateway
+2026-05-15T08:17:10.006Z [ERROR] api_gateway        During handling of the above exception, another exception occurred:
+2026-05-15T08:17:10.007Z [ERROR] api_gateway
+2026-05-15T08:17:10.008Z [ERROR] api_gateway          File "/app/auth/session.py", line 89, in refresh_session
+2026-05-15T08:17:10.009Z [ERROR] api_gateway            token_valid = validate_token(refresh_token)
+2026-05-15T08:17:10.010Z [ERROR] api_gateway          File "/app/auth/validators.py", line 152, in validate_token
+2026-05-15T08:17:10.011Z [ERROR] api_gateway            raise AuthTokenError(f"Token expired: local_now={local_now}, exp={exp}")
+2026-05-15T08:17:10.012Z [ERROR] api_gateway        auth.exceptions.AuthTokenError: Token expired: local_now=1747309622, exp=1747306402
+2026-05-15T08:17:10.013Z [ERROR] monitoring         ALERT: Unhandled AuthTokenError in refresh_session (rate: 3/min)
+2026-05-15T08:17:10.014Z [ERROR] monitoring         Stack:
+2026-05-15T08:17:10.015Z [ERROR] monitoring           auth/validators.py:147 validate_token
+2026-05-15T08:17:10.016Z [ERROR] monitoring           auth/session.py:89 refresh_session
+2026-05-15T08:17:10.017Z [ERROR] monitoring           api/routes/auth.py:44 post_refresh
+2026-05-15T08:17:12.001Z [INFO]  api_gateway        POST /api/v1/auth/login 200 (req_id=r6b8c0, user=9923)
+2026-05-15T08:17:13.001Z [INFO]  api_gateway        POST /api/v1/auth/login 200 (req_id=s7c9d1, user=7731)
+2026-05-15T08:18:00.001Z [INFO]  api_gateway        System stabilising — users re-authenticating
+2026-05-15T08:19:14.001Z [WARN]  monitoring         Auth refresh failure rate returning to normal (0.2/min)
+2026-05-15T08:20:01.001Z [INFO]  api_gateway        All services nominal

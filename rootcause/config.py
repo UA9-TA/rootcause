@@ -10,6 +10,7 @@ else:
 CONFIG_DIR = Path.home() / ".rootcause"
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 
+
 def get_api_key() -> str | None:
     # First check environment variable
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -26,6 +27,7 @@ def get_api_key() -> str | None:
             return config.get("api_key")
     except Exception:
         return None
+
 
 def set_api_key(api_key: str) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)

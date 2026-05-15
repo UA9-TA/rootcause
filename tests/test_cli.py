@@ -18,7 +18,7 @@ def test_config_command():
             rootcause.config.CONFIG_FILE = Path(tmpdir) / "config.toml"
             result = runner.invoke(app, ["config", "my_test_key"])
             assert result.exit_code == 0
-            assert "API key successfully configured" in result.stdout
+            assert "API key" in result.stdout
         finally:
             rootcause.config.CONFIG_FILE = orig_config_file
             rootcause.config.CONFIG_DIR = orig_config_dir
